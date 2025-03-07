@@ -6,13 +6,14 @@ export const taskController = {
   // Create a new task
   async createNewTask(req, res) {
     try {
+      const { id } = req.user;
       const errors = taskValidator.validateTask(req.body);
       if (errors.length) {
         return res.status(400).json({ errors });
       }
 
       const { title, description } = req.body;
-      const newTask = new Task({ title, description });
+      const newTask = new Task({ title, description, userId: id });
       await newTask.save();
 
       res
@@ -25,7 +26,11 @@ export const taskController = {
 
   async getAllTasks(req, res) {
     try {
-      const tasks = await Task.find();
+      const { id } = req.user;
+      const tasks = await Task.find({ userId: id });
+      console.log("req user ", req.user);
+console.log('tasks ',tasks);
+
       res.status(201).json({
         tasks,
         message: "Tasks rettrived successfully",
@@ -43,9 +48,10 @@ export const taskController = {
 
       const updatedTask = await Task.findByIdAndUpdate(
         id,
-        { title, description },
+        { $set: { title, description } }, 
         { new: true, runValidators: true }
       );
+      
 
       if (!updatedTask) {
         return res.status(404).json({ error: "Task not found" });
